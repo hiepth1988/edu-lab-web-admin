@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { caseStudiesApi } from '@/api/catalog'
+import HtmlEditor from '@/components/HtmlEditor.vue'
 import LocaleTabs from '@/components/LocaleTabs.vue'
 
 const route = useRoute()
@@ -133,16 +134,16 @@ onMounted(loadCase)
             <textarea v-model="form.translations[locale.code].excerpt" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           </div>
           <div>
-            <label class="text-sm font-medium text-slate-700">Problem</label>
-            <textarea v-model="form.translations[locale.code].problem" rows="3" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <label class="text-sm font-medium text-slate-700 block mb-1">Problem</label>
+            <HtmlEditor v-model="form.translations[locale.code].problem" />
           </div>
           <div>
-            <label class="text-sm font-medium text-slate-700">Solution</label>
-            <textarea v-model="form.translations[locale.code].solution_text" rows="3" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <label class="text-sm font-medium text-slate-700 block mb-1">Solution</label>
+            <HtmlEditor v-model="form.translations[locale.code].solution_text" />
           </div>
           <div>
-            <label class="text-sm font-medium text-slate-700">Result</label>
-            <textarea v-model="form.translations[locale.code].result" rows="3" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            <label class="text-sm font-medium text-slate-700 block mb-1">Result</label>
+            <HtmlEditor v-model="form.translations[locale.code].result" />
           </div>
         </div>
       </div>
