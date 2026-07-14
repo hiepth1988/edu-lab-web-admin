@@ -3,6 +3,10 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { postsApi, categoriesApi, tagsApi, type PostTranslationPayload } from '@/api/posts'
 import LocaleTabs from '@/components/LocaleTabs.vue'
+import ImageUploadField from '@/components/ImageUploadField.vue'
+import HtmlEditor from '@/components/HtmlEditor.vue'
+
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replace(/\/$/, '')
 
 const route = useRoute()
 const router = useRouter()
@@ -19,16 +23,47 @@ const activeLocale = ref('vi')
 const categories = ref<{ id: number; translations: { locale: string; name: string }[] }[]>([])
 const tags = ref<{ id: number; translations: { locale: string; name: string }[] }[]>([])
 
+function emptyTranslation(): PostTranslationPayload {
+  return {
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    meta_title: '',
+    meta_description: '',
+    og_image: '',
+    canonical_url: '',
+  }
+}
+
 const form = reactive({
   category_id: null as number | null,
   status: 'draft' as 'draft' | 'published',
+  featured_image: '' as string,
   is_featured: false,
   tag_ids: [] as number[],
   translations: {
-    vi: { title: '', slug: '', excerpt: '', content: '', meta_title: '', meta_description: '' },
-    en: { title: '', slug: '', excerpt: '', content: '', meta_title: '', meta_description: '' },
+    vi: emptyTranslation(),
+    en: emptyTranslation(),
   } as Record<string, PostTranslationPayload>,
 })
+
+const localePathPrefix: Record<string, string> = { vi: '', en: '/en' }
+
+function previewUrl(localeCode: string) {
+  const slug = form.translations[localeCode]?.slug || 'bai-viet-cua-ban'
+  return `${siteUrl}${localePathPrefix[localeCode] ?? ''}/insights/${slug}`
+}
+
+function previewTitle(localeCode: string) {
+  const t = form.translations[localeCode]
+  return t?.meta_title || t?.title || 'Tiêu đề bài viết'
+}
+
+function previewDescription(localeCode: string) {
+  const t = form.translations[localeCode]
+  return t?.meta_description || t?.excerpt || 'Mô tả trang sẽ hiển thị ở đây...'
+}
 
 const completed = computed(() => ({
   vi: !!form.translations.vi.title,
@@ -55,6 +90,7 @@ async function loadPost() {
   const post = data.data
   form.category_id = post.category_id
   form.status = post.status
+  form.featured_image = post.featured_image ?? ''
   form.is_featured = post.is_featured
   form.tag_ids = post.tags.map((t: { id: number }) => t.id)
   for (const t of post.translations) {
@@ -65,6 +101,8 @@ async function loadPost() {
       content: t.content ?? '',
       meta_title: t.meta_title ?? '',
       meta_description: t.meta_description ?? '',
+      og_image: t.og_image ?? '',
+      canonical_url: t.canonical_url ?? '',
     }
   }
 }
@@ -136,6 +174,12 @@ onMounted(async () => {
         </div>
       </div>
 
+      <ImageUploadField
+        v-model="form.featured_image"
+        label="Ảnh đại diện (Featured image)"
+        hint="Hiển thị ở trang danh sách bài viết và khi chia sẻ nếu bài viết chưa có OG Image riêng. Kích thước lý tưởng: 1200×630px."
+      />
+
       <div>
         <LocaleTabs v-model:active="activeLocale" :locales="locales" :completed="completed" />
 
@@ -158,38 +202,88 @@ onMounted(async () => {
             />
           </div>
           <div>
-            <label class="text-sm font-medium text-slate-700">Tóm tắt</label>
+            <label class="text-sm font-medium text-slate-700">Mô tả ngắn (excerpt)</label>
             <textarea
               v-model="form.translations[locale.code].excerpt"
               rows="2"
+              placeholder="Tóm tắt ngắn gọn nội dung bài viết..."
               class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             />
+            <p class="mt-1 text-xs text-slate-400">
+              Dùng làm meta description nếu bạn không điền riêng. Tối đa 160 ký tự.
+              ({{ form.translations[locale.code].excerpt?.length ?? 0 }}/160)
+            </p>
           </div>
           <div>
-            <label class="text-sm font-medium text-slate-700">Nội dung</label>
-            <textarea
-              v-model="form.translations[locale.code].content"
-              rows="10"
-              class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
-            />
+            <label class="text-sm font-medium text-slate-700 block mb-1">Nội dung</label>
+            <HtmlEditor v-model="form.translations[locale.code].content" />
           </div>
-          <div class="grid grid-cols-2 gap-4">
+
+          <div class="rounded-xl border border-slate-200 p-4 space-y-4">
             <div>
-              <label class="text-sm font-medium text-slate-700">Meta title</label>
+              <h3 class="text-sm font-semibold text-slate-900">SEO</h3>
+              <p class="text-xs text-slate-500">Kiểm soát cách bài viết hiển thị trên Google và mạng xã hội.</p>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 p-3 bg-slate-50">
+              <p class="text-[11px] uppercase tracking-wide text-slate-400">Xem trước trên Google</p>
+              <p class="mt-1 text-xs text-emerald-700 truncate">{{ previewUrl(locale.code) }}</p>
+              <p class="text-base text-blue-700 truncate">{{ previewTitle(locale.code) }}</p>
+              <p class="text-sm text-slate-600 line-clamp-2">{{ previewDescription(locale.code) }}</p>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-slate-700">Meta Title</label>
+                <span class="text-xs text-slate-400">
+                  {{ form.translations[locale.code].meta_title?.length ?? 0 }}/60
+                </span>
+              </div>
               <input
                 v-model="form.translations[locale.code].meta_title"
                 type="text"
+                placeholder="Để trống sẽ dùng tiêu đề bài viết"
                 class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
+              <p class="mt-1 text-xs text-slate-400">Tối ưu: 30–60 ký tự. Nên chứa từ khóa chính ở đầu.</p>
             </div>
+
             <div>
-              <label class="text-sm font-medium text-slate-700">Meta description</label>
-              <input
+              <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-slate-700">Meta Description</label>
+                <span class="text-xs text-slate-400">
+                  {{ form.translations[locale.code].meta_description?.length ?? 0 }}/160
+                </span>
+              </div>
+              <textarea
                 v-model="form.translations[locale.code].meta_description"
-                type="text"
+                rows="2"
+                placeholder="Để trống sẽ dùng mô tả ngắn (excerpt) bài viết"
                 class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
+              <p class="mt-1 text-xs text-slate-400">
+                Tối ưu: 120–160 ký tự. Mô tả hấp dẫn, chứa từ khóa, kêu gọi click.
+              </p>
             </div>
+
+            <div>
+              <label class="text-sm font-medium text-slate-700">Canonical URL</label>
+              <input
+                v-model="form.translations[locale.code].canonical_url"
+                type="text"
+                :placeholder="`${previewUrl(locale.code)} (để trống nếu không cần)`"
+                class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+              <p class="mt-1 text-xs text-slate-400">
+                Chỉ điền khi bài viết này là bản sao của URL khác, để tránh nội dung trùng lặp.
+              </p>
+            </div>
+
+            <ImageUploadField
+              v-model="form.translations[locale.code].og_image"
+              label="OG Image (Open Graph)"
+              hint="Ảnh hiển thị khi chia sẻ lên Facebook/Zalo. Để trống sẽ dùng ảnh đại diện. Kích thước lý tưởng: 1200×630px."
+            />
           </div>
         </div>
       </div>

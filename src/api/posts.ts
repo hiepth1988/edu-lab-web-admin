@@ -7,11 +7,14 @@ export interface PostTranslationPayload {
   content?: string
   meta_title?: string
   meta_description?: string
+  og_image?: string
+  canonical_url?: string
 }
 
 export interface PostPayload {
   category_id: number | null
   status: 'draft' | 'published'
+  featured_image?: string | null
   is_featured: boolean
   tag_ids: number[]
   translations: Record<string, PostTranslationPayload>
