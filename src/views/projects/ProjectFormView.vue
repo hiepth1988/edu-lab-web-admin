@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { caseStudiesApi } from '@/api/catalog'
+import { projectsApi } from '@/api/catalog'
 import HtmlEditor from '@/components/HtmlEditor.vue'
+import ImageUploadField from '@/components/ImageUploadField.vue'
 import LocaleTabs from '@/components/LocaleTabs.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const isEdit = computed(() => route.params.id !== undefined && route.params.id !== 'new')
-const caseId = computed(() => Number(route.params.id))
+const projectId = computed(() => Number(route.params.id))
 
 const locales = [
   { code: 'vi', label: 'Tiếng Việt' },
@@ -30,12 +31,25 @@ function emptyTranslation(): TranslationFields {
   return { title: '', slug: '', excerpt: '', problem: '', solution_text: '', result: '' }
 }
 
+type SectionKey = 'problem' | 'solution' | 'result'
+
 const form = reactive({
   status: 'draft' as 'draft' | 'published',
   featured_image: '',
   translations: { vi: emptyTranslation(), en: emptyTranslation() } as Record<string, TranslationFields>,
   metrics: [] as { value: string; vi: { label: string }; en: { label: string } }[],
+  sectionImages: { problem: [], solution: [], result: [] } as Record<SectionKey, string[]>,
 })
+
+function addSectionImage(section: SectionKey) {
+  form.sectionImages[section].push('')
+}
+function removeSectionImage(section: SectionKey, i: number) {
+  form.sectionImages[section].splice(i, 1)
+}
+
+const sectionKeys: SectionKey[] = ['problem', 'solution', 'result']
+const sectionLabels: Record<SectionKey, string> = { problem: 'Vấn đề', solution: 'Giải pháp', result: 'Kết quả' }
 
 const completed = computed(() => ({
   vi: !!form.translations.vi.title,
@@ -49,13 +63,13 @@ function removeMetric(i: number) {
   form.metrics.splice(i, 1)
 }
 
-async function loadCase() {
+async function loadProject() {
   if (!isEdit.value) return
-  const { data } = await caseStudiesApi.get(caseId.value)
-  const c = data.data
-  form.status = c.status
-  form.featured_image = c.featured_image ?? ''
-  for (const t of c.translations) {
+  const { data } = await projectsApi.get(projectId.value)
+  const p = data.data
+  form.status = p.status
+  form.featured_image = p.featured_image ?? ''
+  for (const t of p.translations) {
     form.translations[t.locale] = {
       title: t.title,
       slug: t.slug,
@@ -65,58 +79,69 @@ async function loadCase() {
       result: t.result ?? '',
     }
   }
-  form.metrics = c.metrics.map((m: { value: string; translations: { locale: string; label: string }[] }) => ({
+  form.metrics = p.metrics.map((m: { value: string; translations: { locale: string; label: string }[] }) => ({
     value: m.value,
     vi: { label: m.translations.find((t) => t.locale === 'vi')?.label ?? '' },
     en: { label: m.translations.find((t) => t.locale === 'en')?.label ?? '' },
   }))
+  form.sectionImages = { problem: [], solution: [], result: [] }
+  for (const img of (p.section_images ?? []) as { section: SectionKey; image_url: string }[]) {
+    form.sectionImages[img.section]?.push(img.image_url)
+  }
 }
 
 const saving = ref(false)
 
 async function onSubmit() {
   saving.value = true
+  const sectionImages: { section: SectionKey; image_url: string; sort_order: number }[] = []
+  for (const section of Object.keys(form.sectionImages) as SectionKey[]) {
+    form.sectionImages[section].forEach((image_url, sort_order) => {
+      if (image_url) sectionImages.push({ section, image_url, sort_order })
+    })
+  }
   const payload = {
     status: form.status,
     featured_image: form.featured_image || null,
     translations: form.translations,
     metrics: form.metrics.map((m) => ({ value: m.value, translations: { vi: m.vi, en: m.en } })),
+    section_images: sectionImages,
   }
   try {
     if (isEdit.value) {
-      await caseStudiesApi.update(caseId.value, payload)
+      await projectsApi.update(projectId.value, payload)
     } else {
-      await caseStudiesApi.create(payload)
+      await projectsApi.create(payload)
     }
-    router.push('/case-studies')
+    router.push('/projects')
   } finally {
     saving.value = false
   }
 }
 
-onMounted(loadCase)
+onMounted(loadProject)
 </script>
 
 <template>
   <div class="max-w-3xl">
     <h1 class="text-xl font-semibold text-slate-900">
-      {{ isEdit ? 'Chỉnh sửa Case Study' : 'Case Study mới' }}
+      {{ isEdit ? 'Chỉnh sửa dự án' : 'Dự án mới' }}
     </h1>
 
     <form class="mt-6 space-y-8" @submit.prevent="onSubmit">
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="text-sm font-medium text-slate-700">Trạng thái</label>
-          <select v-model="form.status" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-sm font-medium text-slate-700">Featured image URL</label>
-          <input v-model="form.featured_image" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-        </div>
+      <div>
+        <label class="text-sm font-medium text-slate-700">Trạng thái</label>
+        <select v-model="form.status" class="mt-1 w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+        </select>
       </div>
+
+      <ImageUploadField
+        v-model="form.featured_image"
+        label="Ảnh đại diện (Featured image)"
+        hint="Hiển thị dạng banner lớn ở đầu trang dự án. Kích thước lý tưởng: 1600×900px."
+      />
 
       <div>
         <LocaleTabs v-model:active="activeLocale" :locales="locales" :completed="completed" />
@@ -148,6 +173,26 @@ onMounted(loadCase)
         </div>
       </div>
 
+      <div class="rounded-xl border border-slate-200 p-4 space-y-6">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900">Ảnh minh họa theo mục</h3>
+          <p class="text-xs text-slate-500">Hiển thị dưới dạng slider ở mỗi mục trên trang dự án. Dùng chung cho cả hai ngôn ngữ.</p>
+        </div>
+
+        <div v-for="section in sectionKeys" :key="section">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-medium text-slate-700">{{ sectionLabels[section] }}</label>
+            <button type="button" class="text-sm text-slate-600 hover:text-slate-900" @click="addSectionImage(section)">+ Thêm ảnh</button>
+          </div>
+          <div class="mt-3 grid grid-cols-3 gap-4">
+            <div v-for="(_, i) in form.sectionImages[section]" :key="i" class="space-y-1">
+              <ImageUploadField v-model="form.sectionImages[section][i]" />
+              <button type="button" class="text-xs text-red-600 hover:text-red-800" @click="removeSectionImage(section, i)">Xóa ảnh</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div>
         <div class="flex items-center justify-between">
           <label class="text-sm font-medium text-slate-700">Metrics</label>
@@ -165,7 +210,7 @@ onMounted(loadCase)
         <button type="submit" :disabled="saving" class="rounded-lg bg-slate-900 text-white text-sm font-medium px-5 py-2.5 hover:bg-slate-800 disabled:opacity-60">
           {{ saving ? 'Đang lưu...' : 'Lưu' }}
         </button>
-        <RouterLink to="/case-studies" class="rounded-lg border border-slate-300 text-sm font-medium px-5 py-2.5 text-slate-700 hover:bg-slate-50">Hủy</RouterLink>
+        <RouterLink to="/projects" class="rounded-lg border border-slate-300 text-sm font-medium px-5 py-2.5 text-slate-700 hover:bg-slate-50">Hủy</RouterLink>
       </div>
     </form>
   </div>

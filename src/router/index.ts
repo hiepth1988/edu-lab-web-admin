@@ -11,8 +11,10 @@ import SolutionsListView from '@/views/solutions/SolutionsListView.vue'
 import SolutionFormView from '@/views/solutions/SolutionFormView.vue'
 import ProductsListView from '@/views/products/ProductsListView.vue'
 import ProductFormView from '@/views/products/ProductFormView.vue'
-import CaseStudiesListView from '@/views/case-studies/CaseStudiesListView.vue'
-import CaseStudyFormView from '@/views/case-studies/CaseStudyFormView.vue'
+import ProjectsListView from '@/views/projects/ProjectsListView.vue'
+import ProjectFormView from '@/views/projects/ProjectFormView.vue'
+import AudiencesListView from '@/views/audiences/AudiencesListView.vue'
+import AudienceFormView from '@/views/audiences/AudienceFormView.vue'
 import LeadsView from '@/views/LeadsView.vue'
 import ResearchListView from '@/views/research/ResearchListView.vue'
 import ResearchFormView from '@/views/research/ResearchFormView.vue'
@@ -40,8 +42,10 @@ const router = createRouter({
         { path: 'solutions/:id', component: SolutionFormView },
         { path: 'products', component: ProductsListView },
         { path: 'products/:id', component: ProductFormView },
-        { path: 'case-studies', component: CaseStudiesListView },
-        { path: 'case-studies/:id', component: CaseStudyFormView },
+        { path: 'projects', component: ProjectsListView },
+        { path: 'projects/:id', component: ProjectFormView },
+        { path: 'audiences', component: AudiencesListView },
+        { path: 'audiences/:id', component: AudienceFormView },
         { path: 'research', component: ResearchListView },
         { path: 'research/:id', component: ResearchFormView },
         { path: 'leads', component: LeadsView },

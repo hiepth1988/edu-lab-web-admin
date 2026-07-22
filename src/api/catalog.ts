@@ -16,12 +16,20 @@ export const productsApi = {
   remove: (id: number) => api.delete(`/admin/products/${id}`),
 }
 
-export const caseStudiesApi = {
-  list: () => api.get('/admin/case-studies'),
-  get: (id: number) => api.get(`/admin/case-studies/${id}`),
-  create: (payload: unknown) => api.post('/admin/case-studies', payload),
-  update: (id: number, payload: unknown) => api.put(`/admin/case-studies/${id}`, payload),
-  remove: (id: number) => api.delete(`/admin/case-studies/${id}`),
+export const projectsApi = {
+  list: () => api.get('/admin/projects'),
+  get: (id: number) => api.get(`/admin/projects/${id}`),
+  create: (payload: unknown) => api.post('/admin/projects', payload),
+  update: (id: number, payload: unknown) => api.put(`/admin/projects/${id}`, payload),
+  remove: (id: number) => api.delete(`/admin/projects/${id}`),
+}
+
+export const audiencesApi = {
+  list: () => api.get('/admin/audiences'),
+  get: (id: number) => api.get(`/admin/audiences/${id}`),
+  create: (payload: unknown) => api.post('/admin/audiences', payload),
+  update: (id: number, payload: unknown) => api.put(`/admin/audiences/${id}`, payload),
+  remove: (id: number) => api.delete(`/admin/audiences/${id}`),
 }
 
 export const leadsApi = {

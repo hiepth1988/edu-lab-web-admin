@@ -1,30 +1,30 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { caseStudiesApi } from '@/api/catalog'
+import { projectsApi } from '@/api/catalog'
 
-interface CaseStudyRow {
+interface ProjectRow {
   id: number
   status: string
   translations: { locale: string; title: string }[]
 }
 
-const items = ref<CaseStudyRow[]>([])
+const items = ref<ProjectRow[]>([])
 const loading = ref(true)
 
 async function load() {
   loading.value = true
-  const { data } = await caseStudiesApi.list()
+  const { data } = await projectsApi.list()
   items.value = data.data
   loading.value = false
 }
 
-function title(row: CaseStudyRow) {
+function title(row: ProjectRow) {
   return row.translations.find((t) => t.locale === 'vi')?.title ?? row.translations[0]?.title ?? '—'
 }
 
 async function remove(id: number) {
-  if (!confirm('Xóa case study này?')) return
-  await caseStudiesApi.remove(id)
+  if (!confirm('Xóa dự án này?')) return
+  await projectsApi.remove(id)
   await load()
 }
 
@@ -34,9 +34,9 @@ onMounted(load)
 <template>
   <div>
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-slate-900">Case Studies</h1>
-      <RouterLink to="/case-studies/new" class="rounded-lg bg-slate-900 text-white text-sm font-medium px-4 py-2 hover:bg-slate-800">
-        + Case study mới
+      <h1 class="text-xl font-semibold text-slate-900">Our Work</h1>
+      <RouterLink to="/projects/new" class="rounded-lg bg-slate-900 text-white text-sm font-medium px-4 py-2 hover:bg-slate-800">
+        + Dự án mới
       </RouterLink>
     </div>
 
@@ -61,7 +61,7 @@ onMounted(load)
               </span>
             </td>
             <td class="px-4 py-3 text-right space-x-3">
-              <RouterLink :to="`/case-studies/${row.id}`" class="text-slate-600 hover:text-slate-900">Sửa</RouterLink>
+              <RouterLink :to="`/projects/${row.id}`" class="text-slate-600 hover:text-slate-900">Sửa</RouterLink>
               <button class="text-red-600 hover:text-red-800" @click="remove(row.id)">Xóa</button>
             </td>
           </tr>
