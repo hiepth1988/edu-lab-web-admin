@@ -3,6 +3,9 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { productsApi } from '@/api/catalog'
 import LocaleTabs from '@/components/LocaleTabs.vue'
+import SeoFields from '@/components/SeoFields.vue'
+
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replace(/\/$/, '')
 
 const route = useRoute()
 const router = useRouter()
@@ -21,10 +24,30 @@ interface TranslationFields {
   slug: string
   role_summary: string
   description: string
+  meta_title: string
+  meta_description: string
+  og_image: string
+  canonical_url: string
 }
 
 function emptyTranslation(): TranslationFields {
-  return { name: '', slug: '', role_summary: '', description: '' }
+  return {
+    name: '',
+    slug: '',
+    role_summary: '',
+    description: '',
+    meta_title: '',
+    meta_description: '',
+    og_image: '',
+    canonical_url: '',
+  }
+}
+
+const localePathPrefix: Record<string, string> = { vi: '', en: '/en' }
+
+function previewUrl(localeCode: string) {
+  const slug = form.translations[localeCode]?.slug || 'product-cua-ban'
+  return `${siteUrl}${localePathPrefix[localeCode] ?? ''}/products/${slug}`
 }
 
 const form = reactive({
@@ -60,6 +83,10 @@ async function loadProduct() {
       slug: t.slug,
       role_summary: t.role_summary ?? '',
       description: t.description ?? '',
+      meta_title: t.meta_title ?? '',
+      meta_description: t.meta_description ?? '',
+      og_image: t.og_image ?? '',
+      canonical_url: t.canonical_url ?? '',
     }
   }
   form.features = p.features.map((f: { translations: { locale: string; title: string; description: string | null }[] }) => ({
@@ -144,6 +171,16 @@ onMounted(loadProduct)
             <label class="text-sm font-medium text-slate-700">Mô tả</label>
             <textarea v-model="form.translations[locale.code].description" rows="3" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           </div>
+
+          <SeoFields
+            v-model:meta-title="form.translations[locale.code].meta_title"
+            v-model:meta-description="form.translations[locale.code].meta_description"
+            v-model:canonical-url="form.translations[locale.code].canonical_url"
+            v-model:og-image="form.translations[locale.code].og_image"
+            :preview-url="previewUrl(locale.code)"
+            :title-fallback="form.translations[locale.code].name || 'Tên Product'"
+            :description-fallback="form.translations[locale.code].role_summary || ''"
+          />
         </div>
       </div>
 

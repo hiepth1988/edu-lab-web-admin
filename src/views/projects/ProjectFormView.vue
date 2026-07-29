@@ -5,6 +5,9 @@ import { projectsApi } from '@/api/catalog'
 import HtmlEditor from '@/components/HtmlEditor.vue'
 import ImageUploadField from '@/components/ImageUploadField.vue'
 import LocaleTabs from '@/components/LocaleTabs.vue'
+import SeoFields from '@/components/SeoFields.vue'
+
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replace(/\/$/, '')
 
 const route = useRoute()
 const router = useRouter()
@@ -25,10 +28,32 @@ interface TranslationFields {
   problem: string
   solution_text: string
   result: string
+  meta_title: string
+  meta_description: string
+  og_image: string
+  canonical_url: string
 }
 
 function emptyTranslation(): TranslationFields {
-  return { title: '', slug: '', excerpt: '', problem: '', solution_text: '', result: '' }
+  return {
+    title: '',
+    slug: '',
+    excerpt: '',
+    problem: '',
+    solution_text: '',
+    result: '',
+    meta_title: '',
+    meta_description: '',
+    og_image: '',
+    canonical_url: '',
+  }
+}
+
+const localePathPrefix: Record<string, string> = { vi: '', en: '/en' }
+
+function previewUrl(localeCode: string) {
+  const slug = form.translations[localeCode]?.slug || 'du-an-cua-ban'
+  return `${siteUrl}${localePathPrefix[localeCode] ?? ''}/our-work/${slug}`
 }
 
 type SectionKey = 'problem' | 'solution' | 'result'
@@ -77,6 +102,10 @@ async function loadProject() {
       problem: t.problem ?? '',
       solution_text: t.solution_text ?? '',
       result: t.result ?? '',
+      meta_title: t.meta_title ?? '',
+      meta_description: t.meta_description ?? '',
+      og_image: t.og_image ?? '',
+      canonical_url: t.canonical_url ?? '',
     }
   }
   form.metrics = p.metrics.map((m: { value: string; translations: { locale: string; label: string }[] }) => ({
@@ -170,6 +199,16 @@ onMounted(loadProject)
             <label class="text-sm font-medium text-slate-700 block mb-1">Result</label>
             <HtmlEditor v-model="form.translations[locale.code].result" />
           </div>
+
+          <SeoFields
+            v-model:meta-title="form.translations[locale.code].meta_title"
+            v-model:meta-description="form.translations[locale.code].meta_description"
+            v-model:canonical-url="form.translations[locale.code].canonical_url"
+            v-model:og-image="form.translations[locale.code].og_image"
+            :preview-url="previewUrl(locale.code)"
+            :title-fallback="form.translations[locale.code].title || 'Tiêu đề dự án'"
+            :description-fallback="form.translations[locale.code].excerpt || ''"
+          />
         </div>
       </div>
 

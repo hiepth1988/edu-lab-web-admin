@@ -4,6 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { audiencesApi, solutionsApi } from '@/api/catalog'
 import ImageUploadField from '@/components/ImageUploadField.vue'
 import LocaleTabs from '@/components/LocaleTabs.vue'
+import SeoFields from '@/components/SeoFields.vue'
+
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replace(/\/$/, '')
 
 const route = useRoute()
 const router = useRouter()
@@ -23,10 +26,31 @@ interface TranslationFields {
   subheading: string
   pain_points: string
   how_we_help: string
+  meta_title: string
+  meta_description: string
+  og_image: string
+  canonical_url: string
 }
 
 function emptyTranslation(): TranslationFields {
-  return { title: '', slug: '', subheading: '', pain_points: '', how_we_help: '' }
+  return {
+    title: '',
+    slug: '',
+    subheading: '',
+    pain_points: '',
+    how_we_help: '',
+    meta_title: '',
+    meta_description: '',
+    og_image: '',
+    canonical_url: '',
+  }
+}
+
+const localePathPrefix: Record<string, string> = { vi: '', en: '/en' }
+
+function previewUrl(localeCode: string) {
+  const slug = form.translations[localeCode]?.slug || 'audience-cua-ban'
+  return `${siteUrl}${localePathPrefix[localeCode] ?? ''}/who-we-help/${slug}`
 }
 
 const form = reactive({
@@ -80,6 +104,10 @@ async function loadAudience() {
       subheading: t.subheading ?? '',
       pain_points: t.pain_points ?? '',
       how_we_help: t.how_we_help ?? '',
+      meta_title: t.meta_title ?? '',
+      meta_description: t.meta_description ?? '',
+      og_image: t.og_image ?? '',
+      canonical_url: t.canonical_url ?? '',
     }
   }
   form.solutionIds = (a.solutions ?? []).map((s: { id: number }) => s.id)
@@ -163,6 +191,16 @@ onMounted(async () => {
             <label class="text-sm font-medium text-slate-700">How XO helps</label>
             <textarea v-model="form.translations[locale.code].how_we_help" rows="3" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           </div>
+
+          <SeoFields
+            v-model:meta-title="form.translations[locale.code].meta_title"
+            v-model:meta-description="form.translations[locale.code].meta_description"
+            v-model:canonical-url="form.translations[locale.code].canonical_url"
+            v-model:og-image="form.translations[locale.code].og_image"
+            :preview-url="previewUrl(locale.code)"
+            :title-fallback="form.translations[locale.code].title || 'Tiêu đề Audience'"
+            :description-fallback="form.translations[locale.code].subheading || ''"
+          />
         </div>
       </div>
 

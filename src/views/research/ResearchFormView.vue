@@ -3,6 +3,10 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { researchApi, researchTopicsApi } from '@/api/research'
 import LocaleTabs from '@/components/LocaleTabs.vue'
+import HtmlEditor from '@/components/HtmlEditor.vue'
+import SeoFields from '@/components/SeoFields.vue'
+
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replace(/\/$/, '')
 
 const route = useRoute()
 const router = useRouter()
@@ -23,10 +27,30 @@ interface TranslationFields {
   slug: string
   excerpt: string
   content: string
+  meta_title: string
+  meta_description: string
+  og_image: string
+  canonical_url: string
 }
 
 function emptyTranslation(): TranslationFields {
-  return { title: '', slug: '', excerpt: '', content: '' }
+  return {
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    meta_title: '',
+    meta_description: '',
+    og_image: '',
+    canonical_url: '',
+  }
+}
+
+const localePathPrefix: Record<string, string> = { vi: '', en: '/en' }
+
+function previewUrl(localeCode: string) {
+  const slug = form.translations[localeCode]?.slug || 'bai-research-cua-ban'
+  return `${siteUrl}${localePathPrefix[localeCode] ?? ''}/research/${slug}`
 }
 
 const form = reactive({
@@ -61,6 +85,10 @@ async function loadPost() {
       slug: t.slug,
       excerpt: t.excerpt ?? '',
       content: t.content ?? '',
+      meta_title: t.meta_title ?? '',
+      meta_description: t.meta_description ?? '',
+      og_image: t.og_image ?? '',
+      canonical_url: t.canonical_url ?? '',
     }
   }
 }
@@ -131,9 +159,19 @@ onMounted(async () => {
             <textarea v-model="form.translations[locale.code].excerpt" rows="2" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           </div>
           <div>
-            <label class="text-sm font-medium text-slate-700">Nội dung</label>
-            <textarea v-model="form.translations[locale.code].content" rows="8" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono" />
+            <label class="text-sm font-medium text-slate-700 block mb-1">Nội dung</label>
+            <HtmlEditor v-model="form.translations[locale.code].content" />
           </div>
+
+          <SeoFields
+            v-model:meta-title="form.translations[locale.code].meta_title"
+            v-model:meta-description="form.translations[locale.code].meta_description"
+            v-model:canonical-url="form.translations[locale.code].canonical_url"
+            v-model:og-image="form.translations[locale.code].og_image"
+            :preview-url="previewUrl(locale.code)"
+            :title-fallback="form.translations[locale.code].title || 'Tiêu đề bài Research'"
+            :description-fallback="form.translations[locale.code].excerpt || ''"
+          />
         </div>
       </div>
 
