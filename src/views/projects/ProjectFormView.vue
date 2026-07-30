@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { projectsApi } from '@/api/catalog'
+import { categoriesApi } from '@/api/posts'
 import HtmlEditor from '@/components/HtmlEditor.vue'
 import ImageUploadField from '@/components/ImageUploadField.vue'
 import LocaleTabs from '@/components/LocaleTabs.vue'
@@ -20,6 +21,17 @@ const locales = [
   { code: 'en', label: 'English' },
 ]
 const activeLocale = ref('vi')
+
+const categories = ref<{ id: number; translations: { locale: string; name: string }[] }[]>([])
+
+function categoryName(cat: { translations: { locale: string; name: string }[] }) {
+  return cat.translations.find((t) => t.locale === 'vi')?.name ?? cat.translations[0]?.name
+}
+
+async function loadCategories() {
+  const { data } = await categoriesApi.list()
+  categories.value = data.data
+}
 
 interface TranslationFields {
   title: string
@@ -59,8 +71,10 @@ function previewUrl(localeCode: string) {
 type SectionKey = 'problem' | 'solution' | 'result'
 
 const form = reactive({
+  category_id: null as number | null,
   status: 'draft' as 'draft' | 'published',
   featured_image: '',
+  is_featured: false,
   translations: { vi: emptyTranslation(), en: emptyTranslation() } as Record<string, TranslationFields>,
   metrics: [] as { value: string; vi: { label: string }; en: { label: string } }[],
   sectionImages: { problem: [], solution: [], result: [] } as Record<SectionKey, string[]>,
@@ -92,8 +106,10 @@ async function loadProject() {
   if (!isEdit.value) return
   const { data } = await projectsApi.get(projectId.value)
   const p = data.data
+  form.category_id = p.category_id
   form.status = p.status
   form.featured_image = p.featured_image ?? ''
+  form.is_featured = p.is_featured
   for (const t of p.translations) {
     form.translations[t.locale] = {
       title: t.title,
@@ -130,8 +146,10 @@ async function onSubmit() {
     })
   }
   const payload = {
+    category_id: form.category_id,
     status: form.status,
     featured_image: form.featured_image || null,
+    is_featured: form.is_featured,
     translations: form.translations,
     metrics: form.metrics.map((m) => ({ value: m.value, translations: { vi: m.vi, en: m.en } })),
     section_images: sectionImages,
@@ -148,7 +166,9 @@ async function onSubmit() {
   }
 }
 
-onMounted(loadProject)
+onMounted(async () => {
+  await Promise.all([loadCategories(), loadProject()])
+})
 </script>
 
 <template>
@@ -158,13 +178,29 @@ onMounted(loadProject)
     </h1>
 
     <form class="mt-6 space-y-8" @submit.prevent="onSubmit">
-      <div>
-        <label class="text-sm font-medium text-slate-700">Trạng thái</label>
-        <select v-model="form.status" class="mt-1 w-56 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-        </select>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm font-medium text-slate-700">Trạng thái</label>
+          <select v-model="form.status" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Chuyên mục</label>
+          <select v-model="form.category_id" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            <option :value="null">—</option>
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+              {{ categoryName(cat) }}
+            </option>
+          </select>
+        </div>
       </div>
+
+      <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+        <input v-model="form.is_featured" type="checkbox" class="rounded border-slate-300" />
+        Dự án nổi bật (hiển thị ở khối đầu trang danh sách dự án)
+      </label>
 
       <ImageUploadField
         v-model="form.featured_image"

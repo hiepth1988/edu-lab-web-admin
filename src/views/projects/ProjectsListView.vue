@@ -5,7 +5,9 @@ import { projectsApi } from '@/api/catalog'
 interface ProjectRow {
   id: number
   status: string
+  is_featured: boolean
   translations: { locale: string; title: string }[]
+  category: { translations: { locale: string; name: string }[] } | null
 }
 
 const items = ref<ProjectRow[]>([])
@@ -20,6 +22,11 @@ async function load() {
 
 function title(row: ProjectRow) {
   return row.translations.find((t) => t.locale === 'vi')?.title ?? row.translations[0]?.title ?? '—'
+}
+
+function categoryName(row: ProjectRow) {
+  if (!row.category) return '—'
+  return row.category.translations.find((t) => t.locale === 'vi')?.name ?? row.category.translations[0]?.name ?? '—'
 }
 
 async function remove(id: number) {
@@ -45,16 +52,21 @@ onMounted(load)
         <thead class="bg-slate-50 text-slate-500 text-left">
           <tr>
             <th class="px-4 py-3">Tiêu đề</th>
+            <th class="px-4 py-3">Chuyên mục</th>
             <th class="px-4 py-3">Trạng thái</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-if="loading">
-            <td class="px-4 py-4 text-slate-400" colspan="3">Đang tải...</td>
+            <td class="px-4 py-4 text-slate-400" colspan="4">Đang tải...</td>
           </tr>
           <tr v-for="row in items" v-else :key="row.id">
-            <td class="px-4 py-3 font-medium text-slate-800">{{ title(row) }}</td>
+            <td class="px-4 py-3 font-medium text-slate-800">
+              {{ title(row) }}
+              <span v-if="row.is_featured" class="ml-1 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-xs align-middle">Nổi bật</span>
+            </td>
+            <td class="px-4 py-3 text-slate-600">{{ categoryName(row) }}</td>
             <td class="px-4 py-3">
               <span class="rounded-full px-2 py-0.5 text-xs" :class="row.status === 'published' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'">
                 {{ row.status }}
