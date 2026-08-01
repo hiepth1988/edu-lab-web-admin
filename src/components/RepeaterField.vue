@@ -7,16 +7,19 @@ export interface RepeaterFieldSchema {
   options?: { value: string; label: string }[]
 }
 
-const model = defineModel<Record<string, unknown>[]>({ default: () => [] })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RepeaterRow = Record<string, any>
+
+const model = defineModel<RepeaterRow[]>({ default: () => [] })
 
 const props = defineProps<{
   fields: RepeaterFieldSchema[]
   addLabel?: string
-  emptyRow?: () => Record<string, unknown>
+  emptyRow?: () => RepeaterRow
 }>()
 
-function defaultEmptyRow(): Record<string, unknown> {
-  const row: Record<string, unknown> = {}
+function defaultEmptyRow(): RepeaterRow {
+  const row: RepeaterRow = {}
   for (const field of props.fields) {
     row[field.key] = field.type === 'checkbox' ? false : ''
   }
