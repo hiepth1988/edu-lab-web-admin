@@ -75,6 +75,12 @@ interface TranslationFields {
 
   journey_heading: string
   journey_steps: Record<string, unknown>[]
+  journey_note: string
+
+  science_heading: string
+  science_description: string
+  science_cards: Record<string, unknown>[]
+  science_note: string
 
   gallery_heading: string
   gallery_categories: Record<string, unknown>[]
@@ -117,6 +123,11 @@ function emptyTranslation(): TranslationFields {
     feature_groups: [],
     journey_heading: '',
     journey_steps: [],
+    journey_note: '',
+    science_heading: '',
+    science_description: '',
+    science_cards: [],
+    science_note: '',
     gallery_heading: '',
     gallery_categories: [],
     architecture_heading: '',
@@ -244,6 +255,11 @@ async function loadProject() {
       })),
       journey_heading: t.journey_heading ?? '',
       journey_steps: t.journey_steps ?? [],
+      journey_note: t.journey_note ?? '',
+      science_heading: t.science_heading ?? '',
+      science_description: t.science_description ?? '',
+      science_cards: t.science_cards ?? [],
+      science_note: t.science_note ?? '',
       gallery_heading: t.gallery_heading ?? '',
       gallery_categories: t.gallery_categories ?? [],
       architecture_heading: t.architecture_heading ?? '',
@@ -513,6 +529,27 @@ onMounted(async () => {
                   { key: 'description', label: 'Mô tả', type: 'textarea' },
                 ]"
               />
+              <textarea v-model="form.translations[locale.code].journey_note" rows="2" placeholder="Chú thích dưới các bước (tùy chọn, vd: bước 5 quay lại bước 2)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+            </div>
+          </details>
+
+          <details class="group border border-slate-200 rounded-xl p-4">
+            <summary class="cursor-pointer text-sm font-semibold text-slate-900">Khoa học phía sau (cơ sở nghiên cứu)</summary>
+            <div class="mt-3 space-y-3">
+              <input v-model="form.translations[locale.code].science_heading" type="text" placeholder="Tiêu đề section" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <textarea v-model="form.translations[locale.code].science_description" rows="2" placeholder="Mô tả ngắn (nguồn chính)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <RepeaterField
+                v-model="form.translations[locale.code].science_cards"
+                add-label="+ Thêm thẻ"
+                :fields="[
+                  { key: 'icon', label: 'Icon', placeholder: 'vd: event_repeat' },
+                  { key: 'title', label: 'Cơ chế học tập', placeholder: 'vd: Luyện giãn cách' },
+                  { key: 'source', label: 'Nguồn trích dẫn', placeholder: 'vd: Cepeda et al., 2006' },
+                  { key: 'idea', label: 'Ý chính', type: 'textarea' },
+                  { key: 'in_practice', label: 'Áp dụng trong sản phẩm', type: 'textarea' },
+                ]"
+              />
+              <textarea v-model="form.translations[locale.code].science_note" rows="2" placeholder="Dòng nguyên tắc dưới lưới thẻ (tùy chọn)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
             </div>
           </details>
 
