@@ -77,6 +77,8 @@ const previewDescription = computed(() => metaDescription.value || props.descrip
     <ImageUploadField
       v-model="ogImage"
       label="OG Image (Open Graph)"
+      :recommended-width="1200"
+      :recommended-height="630"
       :hint="props.ogImageHint"
     />
   </div>

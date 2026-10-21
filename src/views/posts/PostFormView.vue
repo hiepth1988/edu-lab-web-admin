@@ -255,8 +255,10 @@ onMounted(async () => {
 
       <ImageUploadField
         v-model="form.featured_image"
-        label="Ảnh đại diện (Featured image)"
-        hint="Hiển thị ở trang danh sách bài viết và khi chia sẻ nếu bài viết chưa có OG Image riêng. Kích thước lý tưởng: 1200×630px."
+        label="Ảnh cover (Featured image)"
+        :recommended-width="1200"
+        :recommended-height="630"
+        hint="Hiển thị đầu bài viết, ở danh sách bài viết và khi chia sẻ (nếu chưa có OG Image riêng). Giữ chữ và chi tiết quan trọng cách mép ảnh ~60px."
       />
 
       <div>

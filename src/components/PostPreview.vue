@@ -32,10 +32,10 @@ defineProps<{
         v-if="featuredImage"
         :src="featuredImage"
         :alt="title"
-        class="mt-5 h-56 w-full rounded-xl object-cover"
+        class="mt-5 aspect-[1200/630] w-full rounded-xl object-cover"
       />
 
-      <div v-if="content" class="post-preview-content mt-5 text-slate-800" v-html="content" />
+      <div v-if="content" class="rich-content mt-5 text-slate-800" v-html="content" />
       <p v-else class="mt-5 text-sm italic text-slate-400">Chưa có nội dung.</p>
 
       <aside v-if="cta" class="mt-6 rounded-xl bg-slate-100 p-5">
@@ -62,17 +62,3 @@ defineProps<{
     </article>
   </div>
 </template>
-
-<style scoped>
-/* Tailwind preflight resets rich-text styles; restore a readable approximation of the site's `prose`. */
-.post-preview-content :deep(h2) { font-size: 1.375rem; font-weight: 600; margin: 1.5rem 0 0.75rem; line-height: 1.3; }
-.post-preview-content :deep(h3) { font-size: 1.125rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
-.post-preview-content :deep(p) { margin: 0 0 1rem; line-height: 1.7; }
-.post-preview-content :deep(ul) { list-style: disc; padding-left: 1.5rem; margin: 0 0 1rem; }
-.post-preview-content :deep(ol) { list-style: decimal; padding-left: 1.5rem; margin: 0 0 1rem; }
-.post-preview-content :deep(li) { margin: 0.25rem 0; line-height: 1.6; }
-.post-preview-content :deep(blockquote) { border-left: 3px solid #cbd5e1; padding-left: 1rem; color: #475569; font-style: italic; margin: 0 0 1rem; }
-.post-preview-content :deep(a) { color: #b45309; text-decoration: underline; }
-.post-preview-content :deep(img) { max-width: 100%; border-radius: 0.75rem; margin: 1rem 0; }
-.post-preview-content :deep(strong) { font-weight: 700; }
-</style>
