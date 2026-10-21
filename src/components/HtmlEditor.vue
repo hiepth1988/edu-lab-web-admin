@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { mediaApi } from '@/api/media'
+import { importHtml, looksLikeHtml, type ImportedHtmlMeta } from '@/utils/importHtml'
 
 const model = defineModel<string>({ default: '' })
+const emit = defineEmits<{ imported: [meta: ImportedHtmlMeta] }>()
+
+const sourceMode = ref(false)
+const source = ref('')
 
 const editor = ref<HTMLDivElement>()
 const fileInput = ref<HTMLInputElement>()
@@ -44,6 +49,37 @@ async function onImageSelected(event: Event) {
   }
 }
 
+function onPaste(event: ClipboardEvent) {
+  const text = event.clipboardData?.getData('text/plain') ?? ''
+  // Rich HTML copied from a web page is handled natively; we only step in when the
+  // clipboard holds raw markup as plain text (copied from a code editor or view-source).
+  if (!looksLikeHtml(text)) return
+  event.preventDefault()
+  const { html, meta } = importHtml(text)
+  exec('insertHTML', html)
+  emit('imported', meta)
+}
+
+function toggleSource() {
+  if (!sourceMode.value) {
+    source.value = model.value ?? ''
+    sourceMode.value = true
+    return
+  }
+  // Full pages pasted into the source box get the same cleanup as a paste into the editor.
+  if (/<(!doctype|html|head|body)/i.test(source.value)) {
+    const { html, meta } = importHtml(source.value)
+    model.value = html
+    emit('imported', meta)
+  } else {
+    model.value = source.value
+  }
+  sourceMode.value = false
+  nextTick(() => {
+    if (editor.value) editor.value.innerHTML = model.value ?? ''
+  })
+}
+
 onMounted(() => {
   if (editor.value) editor.value.innerHTML = model.value ?? ''
 })
@@ -82,13 +118,31 @@ const toolBtn =
       <button type="button" :class="toolBtn" title="Hoàn tác" @click="exec('undo')">↶</button>
       <button type="button" :class="toolBtn" title="Làm lại" @click="exec('redo')">↷</button>
       <button type="button" :class="toolBtn" title="Xóa định dạng" @click="exec('removeFormat')">Xóa định dạng</button>
+      <button
+        type="button"
+        :class="[toolBtn, 'ml-auto', sourceMode ? 'bg-slate-900 text-white hover:bg-slate-800' : '']"
+        title="Sửa trực tiếp mã HTML"
+        @click="toggleSource"
+      >
+        {{ sourceMode ? 'Xong' : '</> HTML' }}
+      </button>
     </div>
+    <textarea
+      v-if="sourceMode"
+      v-model="source"
+      spellcheck="false"
+      @input="model = source"
+      placeholder="Dán mã HTML vào đây (có thể dán cả trang HTML, hệ thống sẽ tự lọc lấy phần nội dung)..."
+      class="block w-full min-h-96 resize-y bg-slate-900 px-3 py-2 font-mono text-xs leading-relaxed text-slate-100 focus:outline-none"
+    />
     <div
+      v-show="!sourceMode"
       ref="editor"
       contenteditable="true"
       data-placeholder="Nhập nội dung bài viết..."
       class="html-editor-content prose prose-sm max-w-none min-h-60 px-3 py-2 text-sm focus:outline-none"
       @input="emitChange"
+      @paste="onPaste"
     />
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onImageSelected" />
   </div>

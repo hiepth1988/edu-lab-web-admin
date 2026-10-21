@@ -5,6 +5,9 @@ export interface PostTranslationPayload {
   slug?: string
   excerpt?: string
   content?: string
+  cta_text?: string
+  cta_label?: string
+  cta_url?: string
   meta_title?: string
   meta_description?: string
   og_image?: string
@@ -16,12 +19,14 @@ export interface PostPayload {
   status: 'draft' | 'published'
   featured_image?: string | null
   is_featured: boolean
+  show_cta: boolean
   tag_ids: number[]
+  related_post_ids: number[]
   translations: Record<string, PostTranslationPayload>
 }
 
 export const postsApi = {
-  list: () => api.get('/admin/posts'),
+  list: (params?: { per_page?: number; page?: number }) => api.get('/admin/posts', { params }),
   get: (id: number) => api.get(`/admin/posts/${id}`),
   create: (payload: PostPayload) => api.post('/admin/posts', payload),
   update: (id: number, payload: PostPayload) => api.put(`/admin/posts/${id}`, payload),
