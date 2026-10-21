@@ -32,7 +32,8 @@ async function onSubmit() {
       @submit.prevent="onSubmit"
     >
       <div class="text-center space-y-1">
-        <h1 class="text-lg font-semibold text-slate-900">XO EdTech Lab Admin</h1>
+        <img src="/brand/xo-mark.svg" alt="XO Edu Lab" width="92" height="48" class="mx-auto mb-3 h-12 w-auto" />
+        <h1 class="text-lg font-semibold text-slate-900">XO Edu Lab Admin</h1>
         <p class="text-sm text-slate-500">Đăng nhập để quản lý nội dung</p>
       </div>
 
