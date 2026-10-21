@@ -10,7 +10,13 @@ const props = defineProps<{
   /** Recommended size in px; when set, the preview uses this ratio and off-size images get a warning. */
   recommendedWidth?: number
   recommendedHeight?: number
+  /** Image used when this field is empty (e.g. OG image falls back to the cover); shown as "Mặc định". */
+  fallbackSrc?: string
+  fallbackLabel?: string
 }>()
+
+const displaySrc = computed(() => model.value || props.fallbackSrc || '')
+const usingFallback = computed(() => !model.value && !!props.fallbackSrc)
 
 const fileInput = ref<HTMLInputElement>()
 const uploading = ref(false)
@@ -77,11 +83,17 @@ function remove() {
         :style="{ aspectRatio: `${props.recommendedWidth} / ${props.recommendedHeight}` }"
       >
         <!-- Shown uncropped (contain) so the editor can see what falls outside the display frame. -->
-        <img v-if="model" :src="model" alt="" class="h-full w-full object-contain" @load="onPreviewLoad" />
+        <img v-if="displaySrc" :src="displaySrc" alt="" class="h-full w-full object-contain" @load="onPreviewLoad" />
         <span v-else class="px-2 text-center text-xs text-slate-400">
           {{ props.recommendedWidth }}×{{ props.recommendedHeight }}px
         </span>
-        <span v-if="model" class="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-emerald-500/70" />
+        <span v-if="displaySrc" class="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-emerald-500/70" />
+        <span
+          v-if="usingFallback"
+          class="absolute left-1 top-1 rounded bg-slate-900/75 px-1.5 py-0.5 text-[10px] font-medium text-white"
+        >
+          Mặc định
+        </span>
       </div>
       <div
         v-else
@@ -112,7 +124,7 @@ function remove() {
         <input
           v-model="model"
           type="text"
-          placeholder="Hoặc dán URL ảnh"
+          :placeholder="usingFallback ? `Đang dùng ${props.fallbackLabel ?? 'ảnh mặc định'}. Upload hoặc dán URL để thay.` : 'Hoặc dán URL ảnh'"
           class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
         />
         <p v-if="hasRecommendation" class="text-xs font-medium text-slate-600">

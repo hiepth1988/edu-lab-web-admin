@@ -14,12 +14,12 @@ const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replac
 // Keep in sync with edu-lab-web-front: i18n `detail.postCta*` and runtimeConfig `postCtaUrl`.
 const defaultCta: Record<string, { text: string; label: string }> = {
   vi: {
-    text: 'Bạn đang cân nhắc giữa Moodle và xây riêng? Trong 4 tuần Product Discovery, XO cùng bạn xác định hành vi học cần tạo ra, phần nào nên xây và phần nào nên dùng công cụ có sẵn.',
-    label: 'Đặt lịch tư vấn',
+    text: 'Bạn đang xây nền tảng thi trực tuyến hoặc ngân hàng câu hỏi? XO có sẵn Exam Engine và Question Bank Engine đã chạy thực tế tại TopThi.',
+    label: 'Cơ chế hợp tác',
   },
   en: {
-    text: 'Weighing Moodle against building your own? In a 4-week Product Discovery, XO works with you to define the learning behaviors you need to create, what to build and what to take off the shelf.',
-    label: 'Book a consultation',
+    text: 'Building an online exam platform or question bank? XO has a ready Exam Engine and Question Bank Engine, already running in production at TopThi.',
+    label: 'Partnership models',
   },
 }
 const defaultCtaUrl = import.meta.env.VITE_POST_CTA_URL ?? '/hop-tac'
@@ -307,7 +307,13 @@ onMounted(async () => {
             <div class="flex items-start justify-between gap-4">
               <div>
                 <h3 class="text-sm font-semibold text-slate-900">CTA cuối bài</h3>
-                <p class="text-xs text-slate-500">Để trống sẽ dùng CTA mặc định của site (hiển thị sẵn trong ô làm gợi ý).</p>
+                <p class="text-xs text-slate-500">
+                  Để trống sẽ dùng CTA mặc định của site (chữ mờ trong ô). Chỉ điền khi bài cần CTA riêng.
+                  <span
+                    v-if="!form.translations[locale.code].cta_text && !form.translations[locale.code].cta_label && !form.translations[locale.code].cta_url"
+                    class="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500"
+                  >Đang dùng mặc định</span>
+                </p>
               </div>
               <label class="flex shrink-0 items-center gap-1.5 text-sm text-slate-700">
                 <input v-model="form.show_cta" type="checkbox" />
@@ -347,7 +353,9 @@ onMounted(async () => {
             :preview-url="previewUrl(locale.code)"
             :title-fallback="form.translations[locale.code].title || 'Tiêu đề bài viết'"
             :description-fallback="form.translations[locale.code].excerpt || ''"
-            og-image-hint="Ảnh hiển thị khi chia sẻ lên Facebook/Zalo. Để trống sẽ dùng ảnh đại diện. Kích thước lý tưởng: 1200×630px."
+            og-image-hint="Ảnh hiển thị khi chia sẻ lên Facebook/Zalo. Để trống sẽ dùng ảnh cover của bài viết."
+            :image-fallback="form.featured_image"
+            image-fallback-label="ảnh cover"
           />
         </div>
       </div>

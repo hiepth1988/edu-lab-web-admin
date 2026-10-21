@@ -20,6 +20,7 @@ import ResearchListView from '@/views/research/ResearchListView.vue'
 import ResearchFormView from '@/views/research/ResearchFormView.vue'
 import SubscribersView from '@/views/SubscribersView.vue'
 import AuditLogView from '@/views/AuditLogView.vue'
+import TrackingView from '@/views/TrackingView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -50,6 +51,7 @@ const router = createRouter({
         { path: 'research/:id', component: ResearchFormView },
         { path: 'leads', component: LeadsView },
         { path: 'subscribers', component: SubscribersView },
+        { path: 'tracking', component: TrackingView },
         { path: 'audit-log', component: AuditLogView, meta: { requiresAdmin: true } },
       ],
     },

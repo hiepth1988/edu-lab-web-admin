@@ -632,6 +632,8 @@ onMounted(async () => {
             :preview-url="previewUrl(locale.code)"
             :title-fallback="form.translations[locale.code].title || 'Tiêu đề dự án'"
             :description-fallback="form.translations[locale.code].excerpt || ''"
+            :image-fallback="form.featured_image"
+            image-fallback-label="ảnh đại diện"
           />
         </div>
       </div>
