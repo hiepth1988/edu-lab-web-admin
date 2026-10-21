@@ -32,7 +32,7 @@ async function onLogout() {
   <div class="min-h-screen flex bg-slate-50">
     <aside class="w-60 bg-slate-900 text-slate-200 flex flex-col">
       <div class="px-5 py-5 text-white font-semibold border-b border-slate-800 flex items-center gap-2.5">
-        <img src="/brand/xo-mark-on-dark.svg" alt="" width="46" height="24" class="h-6 w-auto" />
+        <img src="/brand/edulab-mark-on-dark.svg" alt="" width="46" height="24" class="h-6 w-auto" />
         XO Edu Lab
       </div>
       <nav class="flex-1 py-4 space-y-1">
