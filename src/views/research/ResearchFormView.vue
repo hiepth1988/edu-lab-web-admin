@@ -145,7 +145,7 @@ onMounted(async () => {
 
       <div>
         <LocaleTabs v-model:active="activeLocale" :locales="locales" :completed="completed" />
-        <div v-for="locale in locales" :key="locale.code" v-show="activeLocale === locale.code" class="space-y-4">
+        <div v-for="locale in locales" :key="locale.code" class="space-y-4" :class="{ hidden: activeLocale !== locale.code }">
           <div>
             <label class="text-sm font-medium text-slate-700">Tiêu đề</label>
             <input v-model="form.translations[locale.code].title" type="text" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
