@@ -57,6 +57,7 @@ const form = reactive({
   status: 'draft' as 'draft' | 'published',
   sort_order: 0,
   hero_image: '',
+  hero_image_en: '',
   translations: { vi: emptyTranslation(), en: emptyTranslation() } as Record<string, TranslationFields>,
   solutionIds: [] as number[],
 })
@@ -97,6 +98,7 @@ async function loadAudience() {
   form.status = a.status
   form.sort_order = a.sort_order
   form.hero_image = a.hero_image ?? ''
+  form.hero_image_en = a.hero_image_en ?? ''
   for (const t of a.translations) {
     form.translations[t.locale] = {
       title: t.title,
@@ -121,6 +123,7 @@ async function onSubmit() {
     status: form.status,
     sort_order: form.sort_order,
     hero_image: form.hero_image || null,
+    hero_image_en: form.hero_image_en || null,
     translations: form.translations,
     solution_ids: form.solutionIds,
   }
@@ -162,11 +165,20 @@ onMounted(async () => {
         </div>
       </div>
 
-      <ImageUploadField
-        v-model="form.hero_image"
-        label="Ảnh đại diện (Hero image)"
-        hint="Hiển thị ở đầu trang landing page của đối tượng này. Kích thước lý tưởng: 1600×900px."
-      />
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <ImageUploadField
+          v-model="form.hero_image"
+          label="Ảnh đại diện (Hero image)"
+          hint="Hiển thị ở đầu trang landing page của đối tượng này. Kích thước lý tưởng: 1600×900px."
+        />
+        <ImageUploadField
+          v-model="form.hero_image_en"
+          label="Ảnh đại diện — tiếng Anh (tuỳ chọn)"
+          hint="Để trống = trang tiếng Anh dùng ảnh tiếng Việt."
+          :fallback-src="form.hero_image"
+          fallback-label="ảnh tiếng Việt"
+        />
+      </div>
 
       <div>
         <LocaleTabs v-model:active="activeLocale" :locales="locales" :completed="completed" />

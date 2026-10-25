@@ -166,11 +166,12 @@ const form = reactive({
   category_id: null as number | null,
   status: 'draft' as 'draft' | 'published',
   featured_image: '',
+  featured_image_en: '',
   is_featured: false,
   translations: { vi: emptyTranslation(), en: emptyTranslation() } as Record<string, TranslationFields>,
   metrics: [] as { value: string; vi: { label: string }; en: { label: string } }[],
-  solutionModules: [] as { image: string; vi: SolutionModuleLocaleFields; en: SolutionModuleLocaleFields }[],
-  galleryImages: [] as { image_url: string; category_key: string }[],
+  solutionModules: [] as { image: string; image_en: string; vi: SolutionModuleLocaleFields; en: SolutionModuleLocaleFields }[],
+  galleryImages: [] as { image_url: string; image_url_en: string; category_key: string }[],
   relatedProjectIds: [] as number[],
 })
 
@@ -191,14 +192,14 @@ function moduleLocaleFields(module: { vi: SolutionModuleLocaleFields; en: Soluti
 }
 
 function addSolutionModule() {
-  form.solutionModules.push({ image: '', vi: emptySolutionModuleLocale(), en: emptySolutionModuleLocale() })
+  form.solutionModules.push({ image: '', image_en: '', vi: emptySolutionModuleLocale(), en: emptySolutionModuleLocale() })
 }
 function removeSolutionModule(i: number) {
   form.solutionModules.splice(i, 1)
 }
 
 function addGalleryImage() {
-  form.galleryImages.push({ image_url: '', category_key: '' })
+  form.galleryImages.push({ image_url: '', image_url_en: '', category_key: '' })
 }
 function removeGalleryImage(i: number) {
   form.galleryImages.splice(i, 1)
@@ -229,6 +230,7 @@ async function loadProject() {
   form.category_id = p.category_id
   form.status = p.status
   form.featured_image = p.featured_image ?? ''
+  form.featured_image_en = p.featured_image_en ?? ''
   form.is_featured = p.is_featured
 
   for (const t of p.translations) {
@@ -286,11 +288,12 @@ async function loadProject() {
   }))
 
   form.solutionModules = (p.solution_modules ?? []).map(
-    (m: { image: string | null; translations: { locale: string; title: string; description: string | null; technical_note: string | null; features: string[] }[] }) => {
+    (m: { image: string | null; image_en: string | null; translations: { locale: string; title: string; description: string | null; technical_note: string | null; features: string[] }[] }) => {
       const vi = m.translations.find((t) => t.locale === 'vi')
       const en = m.translations.find((t) => t.locale === 'en')
       return {
         image: m.image ?? '',
+        image_en: m.image_en ?? '',
         vi: {
           title: vi?.title ?? '',
           description: vi?.description ?? '',
@@ -307,8 +310,9 @@ async function loadProject() {
     }
   )
 
-  form.galleryImages = (p.gallery_images ?? []).map((g: { image_url: string; category_key: string | null }) => ({
+  form.galleryImages = (p.gallery_images ?? []).map((g: { image_url: string; image_url_en: string | null; category_key: string | null }) => ({
     image_url: g.image_url,
+    image_url_en: g.image_url_en ?? '',
     category_key: g.category_key ?? '',
   }))
 
@@ -333,11 +337,13 @@ async function onSubmit() {
     category_id: form.category_id,
     status: form.status,
     featured_image: form.featured_image || null,
+    featured_image_en: form.featured_image_en || null,
     is_featured: form.is_featured,
     translations,
     metrics: form.metrics.map((m) => ({ value: m.value, translations: { vi: m.vi, en: m.en } })),
     solution_modules: form.solutionModules.map((m) => ({
       image: m.image || null,
+      image_en: m.image_en || null,
       translations: {
         vi: { ...m.vi, features: linesToArray(m.vi.features) },
         en: { ...m.en, features: linesToArray(m.en.features) },
@@ -345,7 +351,7 @@ async function onSubmit() {
     })),
     gallery_images: form.galleryImages
       .filter((g) => g.image_url)
-      .map((g) => ({ image_url: g.image_url, category_key: g.category_key || null })),
+      .map((g) => ({ image_url: g.image_url, image_url_en: g.image_url_en || null, category_key: g.category_key || null })),
     related_project_ids: form.relatedProjectIds.filter(Boolean),
   }
   try {
@@ -396,11 +402,20 @@ onMounted(async () => {
         Dự án nổi bật (hiển thị ở khối đầu trang danh sách dự án)
       </label>
 
-      <ImageUploadField
-        v-model="form.featured_image"
-        label="Ảnh đại diện (Featured image)"
-        hint="Hiển thị dạng banner lớn ở đầu trang dự án. Kích thước lý tưởng: 1600×900px."
-      />
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <ImageUploadField
+          v-model="form.featured_image"
+          label="Ảnh đại diện (Featured image)"
+          hint="Hiển thị dạng banner lớn ở đầu trang dự án. Kích thước lý tưởng: 1600×900px."
+        />
+        <ImageUploadField
+          v-model="form.featured_image_en"
+          label="Ảnh đại diện — tiếng Anh (tuỳ chọn)"
+          hint="Để trống = trang tiếng Anh dùng ảnh tiếng Việt."
+          :fallback-src="form.featured_image"
+          fallback-label="ảnh tiếng Việt"
+        />
+      </div>
 
       <div>
         <LocaleTabs v-model:active="activeLocale" :locales="locales" :completed="completed" />
@@ -641,10 +656,13 @@ onMounted(async () => {
       <div class="rounded-xl border border-slate-200 p-4 space-y-4">
         <div>
           <h3 class="text-sm font-semibold text-slate-900">Solution Modules</h3>
-          <p class="text-xs text-slate-500">Các khối ảnh + mô tả giải pháp xen kẽ trái/phải trên trang dự án. Dùng chung ảnh cho cả hai ngôn ngữ, nội dung nhập riêng theo ngôn ngữ đang chọn ở tab phía trên ({{ activeLocale }}).</p>
+          <p class="text-xs text-slate-500">Các khối ảnh + mô tả giải pháp xen kẽ trái/phải trên trang dự án. Ảnh tiếng Anh là tuỳ chọn (để trống thì dùng ảnh tiếng Việt), nội dung nhập riêng theo ngôn ngữ đang chọn ở tab phía trên ({{ activeLocale }}).</p>
         </div>
         <div v-for="(module, i) in form.solutionModules" :key="i" class="rounded-lg border border-slate-200 p-4 space-y-3">
-          <ImageUploadField v-model="module.image" label="Ảnh minh họa" />
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ImageUploadField v-model="module.image" label="Ảnh minh họa" />
+            <ImageUploadField v-model="module.image_en" label="Ảnh minh họa — tiếng Anh (tuỳ chọn)" hint="Để trống = trang tiếng Anh dùng ảnh tiếng Việt." :fallback-src="module.image" fallback-label="ảnh tiếng Việt" />
+          </div>
           <div class="grid grid-cols-1 gap-2">
             <input v-model="moduleLocaleFields(module).title" type="text" placeholder="Tiêu đề module" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
             <textarea v-model="moduleLocaleFields(module).description" rows="2" placeholder="Mô tả" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
@@ -659,10 +677,13 @@ onMounted(async () => {
       <div class="rounded-xl border border-slate-200 p-4 space-y-4">
         <div>
           <h3 class="text-sm font-semibold text-slate-900">Ảnh Gallery</h3>
-          <p class="text-xs text-slate-500">Dùng chung cho cả hai ngôn ngữ. "Category key" dùng để lọc theo tab đã khai báo ở mục Product Gallery phía trên.</p>
+          <p class="text-xs text-slate-500">Ảnh tiếng Anh là tuỳ chọn, để trống thì trang tiếng Anh dùng ảnh tiếng Việt. "Category key" dùng để lọc theo tab đã khai báo ở mục Product Gallery phía trên.</p>
         </div>
         <div v-for="(image, i) in form.galleryImages" :key="i" class="rounded-lg border border-slate-200 p-4 space-y-2">
-          <ImageUploadField v-model="image.image_url" />
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <ImageUploadField v-model="image.image_url" label="Ảnh" />
+            <ImageUploadField v-model="image.image_url_en" label="Ảnh tiếng Anh (tuỳ chọn)" hint="Để trống = trang tiếng Anh dùng ảnh tiếng Việt." :fallback-src="image.image_url" fallback-label="ảnh tiếng Việt" />
+          </div>
           <input v-model="image.category_key" type="text" placeholder="Category key (vd: learning)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <button type="button" class="text-xs text-red-600 hover:text-red-800" @click="removeGalleryImage(i)">Xóa ảnh</button>
         </div>

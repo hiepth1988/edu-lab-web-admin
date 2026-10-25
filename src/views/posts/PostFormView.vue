@@ -62,6 +62,7 @@ const form = reactive({
   category_id: null as number | null,
   status: 'draft' as 'draft' | 'published',
   featured_image: '' as string,
+  featured_image_en: '' as string,
   is_featured: false,
   show_cta: true,
   tag_ids: [] as number[],
@@ -123,6 +124,7 @@ async function loadPost() {
   form.category_id = post.category_id
   form.status = post.status
   form.featured_image = post.featured_image ?? ''
+  form.featured_image_en = post.featured_image_en ?? ''
   form.is_featured = post.is_featured
   form.show_cta = post.show_cta ?? true
   form.tag_ids = post.tags.map((t: { id: number }) => t.id)
@@ -259,6 +261,15 @@ onMounted(async () => {
         :recommended-width="1200"
         :recommended-height="630"
         hint="Hiển thị đầu bài viết, ở danh sách bài viết và khi chia sẻ (nếu chưa có OG Image riêng). Giữ chữ và chi tiết quan trọng cách mép ảnh ~60px."
+      />
+      <ImageUploadField
+        v-model="form.featured_image_en"
+        label="Ảnh cover — tiếng Anh (tuỳ chọn)"
+        :recommended-width="1200"
+        :recommended-height="630"
+        hint="Để trống = trang tiếng Anh dùng ảnh tiếng Việt."
+        :fallback-src="form.featured_image"
+        fallback-label="ảnh tiếng Việt"
       />
 
       <div>
