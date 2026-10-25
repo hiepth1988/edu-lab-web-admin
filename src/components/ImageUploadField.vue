@@ -15,7 +15,11 @@ const props = defineProps<{
   fallbackLabel?: string
 }>()
 
-const displaySrc = computed(() => model.value || props.fallbackSrc || '')
+// Site-relative paths (e.g. /images/home/x.jpg) live on the front site, not the admin.
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://edulab.xotech.space').replace(/\/$/, '')
+const resolve = (src: string) => (src.startsWith('/') && !src.startsWith('//') ? `${siteUrl}${src}` : src)
+
+const displaySrc = computed(() => resolve(model.value || props.fallbackSrc || ''))
 const usingFallback = computed(() => !model.value && !!props.fallbackSrc)
 
 const fileInput = ref<HTMLInputElement>()
@@ -99,7 +103,7 @@ function remove() {
         v-else
         class="h-24 w-24 shrink-0 rounded-lg border border-slate-300 bg-slate-50 overflow-hidden flex items-center justify-center"
       >
-        <img v-if="model" :src="model" alt="" class="h-full w-full object-cover" />
+        <img v-if="model" :src="displaySrc" alt="" class="h-full w-full object-cover" />
         <span v-else class="text-xs text-slate-400">Chưa có ảnh</span>
       </div>
       <div class="flex-1 space-y-2">

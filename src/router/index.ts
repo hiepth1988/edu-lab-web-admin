@@ -21,6 +21,8 @@ import ResearchFormView from '@/views/research/ResearchFormView.vue'
 import SubscribersView from '@/views/SubscribersView.vue'
 import AuditLogView from '@/views/AuditLogView.vue'
 import TrackingView from '@/views/TrackingView.vue'
+import PagesListView from '@/views/pages/PagesListView.vue'
+import PageFormView from '@/views/pages/PageFormView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -35,6 +37,8 @@ const router = createRouter({
       component: AdminLayout,
       children: [
         { path: '', component: DashboardView },
+        { path: 'pages', component: PagesListView },
+        { path: 'pages/:id', component: PageFormView },
         { path: 'posts', component: PostsListView },
         { path: 'posts/:id', component: PostFormView },
         { path: 'categories', component: CategoriesView },

@@ -8,6 +8,7 @@ const router = useRouter()
 
 const navItems = computed(() => [
   { label: 'Dashboard', to: '/' },
+  { label: 'Trang', to: '/pages' },
   { label: 'Bài viết', to: '/posts' },
   { label: 'Chuyên mục', to: '/categories' },
   { label: 'Tags', to: '/tags' },
