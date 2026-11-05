@@ -9,7 +9,7 @@ import { PAGE_LABELS, SECTION_LABELS, blankLike } from '@/utils/pageLabels'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = any
 
-const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://edulab.xotech.space').replace(/\/$/, '')
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://edulab.xospace.xyz').replace(/\/$/, '')
 const route = useRoute()
 const pageId = computed(() => Number(route.params.id))
 

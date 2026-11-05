@@ -8,7 +8,7 @@ import LocaleTabs from '@/components/LocaleTabs.vue'
 import RepeaterField from '@/components/RepeaterField.vue'
 import SeoFields from '@/components/SeoFields.vue'
 
-const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replace(/\/$/, '')
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://edulab.xospace.xyz').replace(/\/$/, '')
 
 const colorOptions = [
   { value: 'primary', label: 'Primary (Navy)' },

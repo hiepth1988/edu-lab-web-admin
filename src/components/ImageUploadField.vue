@@ -16,7 +16,7 @@ const props = defineProps<{
 }>()
 
 // Site-relative paths (e.g. /images/home/x.jpg) live on the front site, not the admin.
-const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://edulab.xotech.space').replace(/\/$/, '')
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://edulab.xospace.xyz').replace(/\/$/, '')
 const resolve = (src: string) => (src.startsWith('/') && !src.startsWith('//') ? `${siteUrl}${src}` : src)
 
 const displaySrc = computed(() => resolve(model.value || props.fallbackSrc || ''))

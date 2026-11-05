@@ -9,7 +9,7 @@ import ImageUploadField from '@/components/ImageUploadField.vue'
 import PostPreview from '@/components/PostPreview.vue'
 import type { ImportedHtmlMeta } from '@/utils/importHtml'
 
-const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replace(/\/$/, '')
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://edulab.xospace.xyz').replace(/\/$/, '')
 
 // Keep in sync with edu-lab-web-front: i18n `detail.postCta*` and runtimeConfig `postCtaUrl`.
 const defaultCta: Record<string, { text: string; label: string }> = {

@@ -6,7 +6,7 @@ import ImageUploadField from '@/components/ImageUploadField.vue'
 import LocaleTabs from '@/components/LocaleTabs.vue'
 import SeoFields from '@/components/SeoFields.vue'
 
-const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://xotech.space').replace(/\/$/, '')
+const siteUrl = (import.meta.env.VITE_SITE_URL ?? 'https://edulab.xospace.xyz').replace(/\/$/, '')
 
 const route = useRoute()
 const router = useRouter()
