@@ -79,8 +79,8 @@ const isResearch = computed(() => form.type === 'research')
 
 // Article categories and research topics are separate lists; show only the ones for this type.
 const typeCategories = computed(() => categories.value.filter((c) => c.type === form.type))
-// Related posts are linked as /insights/..., so only articles can be picked.
-const relatedOptions = computed(() => otherPosts.value.filter((p) => p.type === 'post'))
+// Related items can be articles or research; the site links each to its own page.
+const relatedOptions = computed(() => otherPosts.value)
 
 watch(
   () => form.type,
@@ -109,9 +109,10 @@ function tagName(tag: { translations: { locale: string; name: string }[] }) {
   return tag.translations.find((t) => t.locale === 'vi')?.name ?? tag.translations[0]?.name
 }
 
-function postTitle(p: { id: number; status: string; translations: { locale: string; title: string }[] }) {
+function postTitle(p: { id: number; type?: PostType; status: string; translations: { locale: string; title: string }[] }) {
   const title = p.translations.find((t) => t.locale === 'vi')?.title ?? p.translations[0]?.title ?? `#${p.id}`
-  return p.status === 'published' ? title : `${title} (draft)`
+  const label = p.type === 'research' ? `[Research] ${title}` : title
+  return p.status === 'published' ? label : `${label} (draft)`
 }
 
 function addRelatedPost() {
@@ -180,14 +181,14 @@ const preview = computed(() => {
     tags: tags.value
       .filter((t) => form.tag_ids.includes(t.id))
       .map((t) => t.translations.find((x) => x.locale === code)?.name ?? tagName(t)),
-    cta: form.show_cta && !isResearch.value
+    cta: form.show_cta
       ? {
           text: tr.cta_text || defaultCta[code].text,
           label: tr.cta_label || defaultCta[code].label,
           url: absoluteSiteUrl(tr.cta_url || defaultCtaUrl, code),
         }
       : null,
-    relatedTitles: (isResearch.value ? [] : form.related_post_ids)
+    relatedTitles: form.related_post_ids
       .map((id) => otherPosts.value.find((p) => p.id === id))
       .filter((p): p is NonNullable<typeof p> => !!p && p.status === 'published')
       .map((p) => p.translations.find((t) => t.locale === code)?.title ?? postTitle(p)),
@@ -209,10 +210,7 @@ const saving = ref(false)
 async function onSubmit() {
   saving.value = true
   try {
-    // Research items have no tags or related posts on the site, so don't keep stale ones.
-    const payload = isResearch.value
-      ? { ...form, tag_ids: [], related_post_ids: [] }
-      : { ...form, related_post_ids: form.related_post_ids.filter(Boolean) }
+    const payload = { ...form, related_post_ids: form.related_post_ids.filter(Boolean) }
     if (isEdit.value) {
       await postsApi.update(postId.value, payload)
     } else {
@@ -280,7 +278,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-if="!isResearch">
+      <div>
         <label class="text-sm font-medium text-slate-700 block mb-1">Tags</label>
         <div class="flex flex-wrap gap-2">
           <label
@@ -295,7 +293,6 @@ onMounted(async () => {
       </div>
 
       <ImageUploadField
-        v-if="!isResearch"
         v-model="form.featured_image"
         label="Ảnh cover (Featured image)"
         :recommended-width="1200"
@@ -303,7 +300,6 @@ onMounted(async () => {
         hint="Hiển thị đầu bài viết, ở danh sách bài viết và khi chia sẻ (nếu chưa có OG Image riêng). Giữ chữ và chi tiết quan trọng cách mép ảnh ~60px."
       />
       <ImageUploadField
-        v-if="!isResearch"
         v-model="form.featured_image_en"
         label="Ảnh cover — tiếng Anh (tuỳ chọn)"
         :recommended-width="1200"
@@ -368,7 +364,7 @@ onMounted(async () => {
             />
           </div>
 
-          <div v-if="!isResearch" class="rounded-xl border border-slate-200 p-4 space-y-3">
+          <div class="rounded-xl border border-slate-200 p-4 space-y-3">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <h3 class="text-sm font-semibold text-slate-900">CTA cuối bài</h3>
@@ -425,7 +421,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-if="!isResearch" class="rounded-xl border border-slate-200 p-4 space-y-4">
+      <div class="rounded-xl border border-slate-200 p-4 space-y-4">
         <div>
           <h3 class="text-sm font-semibold text-slate-900">Bài viết liên quan</h3>
           <p class="text-xs text-slate-500">Nếu để trống, trang bài viết sẽ tự động hiển thị 3 bài mới nhất cùng chuyên mục. Bài ở trạng thái draft sẽ không hiển thị ngoài site.</p>
@@ -464,7 +460,7 @@ onMounted(async () => {
       :category="preview.category"
       :title="form.translations[activeLocale].title"
       :excerpt="form.translations[activeLocale].excerpt"
-      :featured-image="isResearch ? '' : form.featured_image"
+      :featured-image="form.featured_image"
       :content="form.translations[activeLocale].content"
       :tags="preview.tags"
       :cta="preview.cta"
