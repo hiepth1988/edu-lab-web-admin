@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { categoriesApi } from '@/api/posts'
+import { reactive, ref, watch } from 'vue'
+import { categoriesApi, postTypes, type PostType } from '@/api/posts'
 
 interface CategoryRow {
   id: number
   translations: { locale: string; name: string; slug: string }[]
 }
 
+// Article categories and research topics are kept as separate lists.
+const activeType = ref<PostType>('post')
 const categories = ref<CategoryRow[]>([])
 const form = reactive({ vi: '', en: '' })
 
 async function load() {
-  const { data } = await categoriesApi.list()
+  const { data } = await categoriesApi.list({ type: activeType.value })
   categories.value = data.data
 }
 
@@ -22,6 +24,7 @@ function name(cat: CategoryRow, locale: string) {
 async function onCreate() {
   if (!form.vi) return
   await categoriesApi.create({
+    type: activeType.value,
     translations: {
       vi: { name: form.vi },
       en: { name: form.en || form.vi },
@@ -38,14 +41,27 @@ async function remove(id: number) {
   await load()
 }
 
-onMounted(load)
+watch(activeType, load, { immediate: true })
 </script>
 
 <template>
   <div class="max-w-2xl">
     <h1 class="text-xl font-semibold text-slate-900">Chuyên mục</h1>
 
-    <form class="mt-6 flex gap-3" @submit.prevent="onCreate">
+    <div class="mt-6 flex gap-2 border-b border-slate-200">
+      <button
+        v-for="t in postTypes"
+        :key="t.value"
+        type="button"
+        class="px-3 py-2 text-sm border-b-2 -mb-px"
+        :class="activeType === t.value ? 'border-slate-900 text-slate-900 font-medium' : 'border-transparent text-slate-500 hover:text-slate-700'"
+        @click="activeType = t.value"
+      >
+        {{ t.value === 'research' ? 'Chủ đề Research' : 'Chuyên mục bài viết' }}
+      </button>
+    </div>
+
+    <form class="mt-4 flex gap-3" @submit.prevent="onCreate">
       <input
         v-model="form.vi"
         placeholder="Tên (Tiếng Việt)"

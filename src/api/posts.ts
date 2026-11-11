@@ -2,6 +2,8 @@ import { api } from './client'
 
 export interface PostTranslationPayload {
   title: string
+  /** Hide this language version on the public site. */
+  is_hidden?: boolean
   slug?: string
   excerpt?: string
   content?: string
@@ -14,7 +16,15 @@ export interface PostTranslationPayload {
   canonical_url?: string
 }
 
+export type PostType = 'post' | 'research'
+
+export const postTypes: { value: PostType; label: string }[] = [
+  { value: 'post', label: 'Bài viết' },
+  { value: 'research', label: 'Research' },
+]
+
 export interface PostPayload {
+  type: PostType
   category_id: number | null
   status: 'draft' | 'published'
   featured_image?: string | null
@@ -26,7 +36,7 @@ export interface PostPayload {
 }
 
 export const postsApi = {
-  list: (params?: { per_page?: number; page?: number }) => api.get('/admin/posts', { params }),
+  list: (params?: { per_page?: number; page?: number; type?: PostType }) => api.get('/admin/posts', { params }),
   get: (id: number) => api.get(`/admin/posts/${id}`),
   create: (payload: PostPayload) => api.post('/admin/posts', payload),
   update: (id: number, payload: PostPayload) => api.put(`/admin/posts/${id}`, payload),
@@ -34,7 +44,7 @@ export const postsApi = {
 }
 
 export const categoriesApi = {
-  list: () => api.get('/admin/categories'),
+  list: (params?: { type?: PostType }) => api.get('/admin/categories', { params }),
   create: (payload: unknown) => api.post('/admin/categories', payload),
   update: (id: number, payload: unknown) => api.put(`/admin/categories/${id}`, payload),
   remove: (id: number) => api.delete(`/admin/categories/${id}`),

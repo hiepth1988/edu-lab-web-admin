@@ -16,7 +16,6 @@ const navItems = computed(() => [
   { label: 'Products', to: '/products' },
   { label: 'Our Work', to: '/projects' },
   { label: 'Who We Help', to: '/audiences' },
-  { label: 'Research', to: '/research' },
   { label: 'Leads', to: '/leads' },
   { label: 'Subscribers', to: '/subscribers' },
   { label: 'Tracking', to: '/tracking' },

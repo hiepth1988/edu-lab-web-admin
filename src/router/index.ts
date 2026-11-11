@@ -16,8 +16,6 @@ import ProjectFormView from '@/views/projects/ProjectFormView.vue'
 import AudiencesListView from '@/views/audiences/AudiencesListView.vue'
 import AudienceFormView from '@/views/audiences/AudienceFormView.vue'
 import LeadsView from '@/views/LeadsView.vue'
-import ResearchListView from '@/views/research/ResearchListView.vue'
-import ResearchFormView from '@/views/research/ResearchFormView.vue'
 import SubscribersView from '@/views/SubscribersView.vue'
 import AuditLogView from '@/views/AuditLogView.vue'
 import TrackingView from '@/views/TrackingView.vue'
@@ -51,8 +49,9 @@ const router = createRouter({
         { path: 'projects/:id', component: ProjectFormView },
         { path: 'audiences', component: AudiencesListView },
         { path: 'audiences/:id', component: AudienceFormView },
-        { path: 'research', component: ResearchListView },
-        { path: 'research/:id', component: ResearchFormView },
+        // Research is now managed under Bài viết (type = research).
+        { path: 'research', redirect: '/posts?type=research' },
+        { path: 'research/:id', redirect: '/posts?type=research' },
         { path: 'leads', component: LeadsView },
         { path: 'subscribers', component: SubscribersView },
         { path: 'tracking', component: TrackingView },

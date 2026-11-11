@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { postsApi, categoriesApi, tagsApi, type PostTranslationPayload } from '@/api/posts'
+import { postsApi, categoriesApi, tagsApi, postTypes, type PostTranslationPayload, type PostType } from '@/api/posts'
 import LocaleTabs from '@/components/LocaleTabs.vue'
 import HtmlEditor from '@/components/HtmlEditor.vue'
 import SeoFields from '@/components/SeoFields.vue'
@@ -38,13 +38,14 @@ const locales = [
 ]
 const activeLocale = ref('vi')
 
-const categories = ref<{ id: number; translations: { locale: string; name: string }[] }[]>([])
+const categories = ref<{ id: number; type: PostType; translations: { locale: string; name: string }[] }[]>([])
 const tags = ref<{ id: number; translations: { locale: string; name: string }[] }[]>([])
-const otherPosts = ref<{ id: number; status: string; translations: { locale: string; title: string }[] }[]>([])
+const otherPosts = ref<{ id: number; type: PostType; status: string; translations: { locale: string; title: string }[] }[]>([])
 
 function emptyTranslation(): PostTranslationPayload {
   return {
     title: '',
+    is_hidden: false,
     slug: '',
     excerpt: '',
     content: '',
@@ -59,6 +60,7 @@ function emptyTranslation(): PostTranslationPayload {
 }
 
 const form = reactive({
+  type: (route.query.type === 'research' ? 'research' : 'post') as PostType,
   category_id: null as number | null,
   status: 'draft' as 'draft' | 'published',
   featured_image: '' as string,
@@ -73,16 +75,30 @@ const form = reactive({
   } as Record<string, PostTranslationPayload>,
 })
 
+const isResearch = computed(() => form.type === 'research')
+
+// Article categories and research topics are separate lists; show only the ones for this type.
+const typeCategories = computed(() => categories.value.filter((c) => c.type === form.type))
+// Related posts are linked as /insights/..., so only articles can be picked.
+const relatedOptions = computed(() => otherPosts.value.filter((p) => p.type === 'post'))
+
+watch(
+  () => form.type,
+  () => {
+    if (form.category_id && !typeCategories.value.some((c) => c.id === form.category_id)) form.category_id = null
+  },
+)
+
 const localePathPrefix: Record<string, string> = { vi: '', en: '/en' }
 
 function previewUrl(localeCode: string) {
   const slug = form.translations[localeCode]?.slug || 'bai-viet-cua-ban'
-  return `${siteUrl}${localePathPrefix[localeCode] ?? ''}/insights/${slug}`
+  return `${siteUrl}${localePathPrefix[localeCode] ?? ''}/${isResearch.value ? 'research' : 'insights'}/${slug}`
 }
 
 const completed = computed(() => ({
   vi: !!form.translations.vi.title,
-  en: !!form.translations.en.title,
+  en: !!form.translations.en.title && !form.translations.en.is_hidden,
 }))
 
 function categoryName(cat: { translations: { locale: string; name: string }[] }) {
@@ -100,7 +116,7 @@ function postTitle(p: { id: number; status: string; translations: { locale: stri
 
 function addRelatedPost() {
   const used = new Set(form.related_post_ids)
-  form.related_post_ids.push(otherPosts.value.find((p) => !used.has(p.id))?.id ?? 0)
+  form.related_post_ids.push(relatedOptions.value.find((p) => !used.has(p.id))?.id ?? 0)
 }
 function removeRelatedPost(i: number) {
   form.related_post_ids.splice(i, 1)
@@ -121,6 +137,7 @@ async function loadPost() {
   if (!isEdit.value) return
   const { data } = await postsApi.get(postId.value)
   const post = data.data
+  form.type = post.type ?? 'post'
   form.category_id = post.category_id
   form.status = post.status
   form.featured_image = post.featured_image ?? ''
@@ -132,6 +149,7 @@ async function loadPost() {
   for (const t of post.translations) {
     form.translations[t.locale] = {
       title: t.title,
+      is_hidden: !!t.is_hidden,
       slug: t.slug,
       excerpt: t.excerpt ?? '',
       content: t.content ?? '',
@@ -162,14 +180,14 @@ const preview = computed(() => {
     tags: tags.value
       .filter((t) => form.tag_ids.includes(t.id))
       .map((t) => t.translations.find((x) => x.locale === code)?.name ?? tagName(t)),
-    cta: form.show_cta
+    cta: form.show_cta && !isResearch.value
       ? {
           text: tr.cta_text || defaultCta[code].text,
           label: tr.cta_label || defaultCta[code].label,
           url: absoluteSiteUrl(tr.cta_url || defaultCtaUrl, code),
         }
       : null,
-    relatedTitles: form.related_post_ids
+    relatedTitles: (isResearch.value ? [] : form.related_post_ids)
       .map((id) => otherPosts.value.find((p) => p.id === id))
       .filter((p): p is NonNullable<typeof p> => !!p && p.status === 'published')
       .map((p) => p.translations.find((t) => t.locale === code)?.title ?? postTitle(p)),
@@ -191,13 +209,16 @@ const saving = ref(false)
 async function onSubmit() {
   saving.value = true
   try {
-    const payload = { ...form, related_post_ids: form.related_post_ids.filter(Boolean) }
+    // Research items have no tags or related posts on the site, so don't keep stale ones.
+    const payload = isResearch.value
+      ? { ...form, tag_ids: [], related_post_ids: [] }
+      : { ...form, related_post_ids: form.related_post_ids.filter(Boolean) }
     if (isEdit.value) {
       await postsApi.update(postId.value, payload)
     } else {
       await postsApi.create(payload)
     }
-    router.push('/posts')
+    router.push(isResearch.value ? '/posts?type=research' : '/posts')
   } finally {
     saving.value = false
   }
@@ -212,19 +233,37 @@ onMounted(async () => {
   <div class="flex items-start gap-8">
   <div class="w-full max-w-3xl shrink-0">
     <h1 class="text-xl font-semibold text-slate-900">
-      {{ isEdit ? 'Chỉnh sửa bài viết' : 'Bài viết mới' }}
+      {{ isEdit ? (isResearch ? 'Chỉnh sửa bài research' : 'Chỉnh sửa bài viết') : (isResearch ? 'Bài research mới' : 'Bài viết mới') }}
     </h1>
 
     <form class="mt-6 space-y-6" @submit.prevent="onSubmit">
+      <div>
+        <label class="text-sm font-medium text-slate-700 block mb-1">Loại</label>
+        <div class="flex gap-2">
+          <label
+            v-for="t in postTypes"
+            :key="t.value"
+            class="flex items-center gap-1.5 text-sm border rounded-lg px-3 py-2 cursor-pointer"
+            :class="form.type === t.value ? 'border-slate-900 bg-slate-50 font-medium' : 'border-slate-300'"
+          >
+            <input v-model="form.type" type="radio" :value="t.value" />
+            {{ t.label }}
+          </label>
+        </div>
+        <p class="mt-1 text-xs text-slate-400">
+          {{ isResearch ? 'Hiển thị ở tab Research trên trang Insights (link /research/...).' : 'Hiển thị ở tab Bài viết trên trang Insights (link /insights/...).' }}
+        </p>
+      </div>
+
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="text-sm font-medium text-slate-700">Chuyên mục</label>
+          <label class="text-sm font-medium text-slate-700">{{ isResearch ? 'Chủ đề research' : 'Chuyên mục' }}</label>
           <select
             v-model="form.category_id"
             class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
             <option :value="null">—</option>
-            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+            <option v-for="cat in typeCategories" :key="cat.id" :value="cat.id">
               {{ categoryName(cat) }}
             </option>
           </select>
@@ -241,7 +280,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div>
+      <div v-if="!isResearch">
         <label class="text-sm font-medium text-slate-700 block mb-1">Tags</label>
         <div class="flex flex-wrap gap-2">
           <label
@@ -256,6 +295,7 @@ onMounted(async () => {
       </div>
 
       <ImageUploadField
+        v-if="!isResearch"
         v-model="form.featured_image"
         label="Ảnh cover (Featured image)"
         :recommended-width="1200"
@@ -263,6 +303,7 @@ onMounted(async () => {
         hint="Hiển thị đầu bài viết, ở danh sách bài viết và khi chia sẻ (nếu chưa có OG Image riêng). Giữ chữ và chi tiết quan trọng cách mép ảnh ~60px."
       />
       <ImageUploadField
+        v-if="!isResearch"
         v-model="form.featured_image_en"
         label="Ảnh cover — tiếng Anh (tuỳ chọn)"
         :recommended-width="1200"
@@ -276,6 +317,19 @@ onMounted(async () => {
         <LocaleTabs v-model:active="activeLocale" :locales="locales" :completed="completed" />
 
         <div v-for="locale in locales" :key="locale.code" class="space-y-4" :class="{ hidden: activeLocale !== locale.code }">
+          <label
+            v-if="locale.code !== 'vi'"
+            class="flex items-start gap-2 rounded-lg border px-3 py-2 text-sm"
+            :class="form.translations[locale.code].is_hidden ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-slate-200 text-slate-700'"
+          >
+            <input v-model="form.translations[locale.code].is_hidden" type="checkbox" class="mt-0.5" />
+            <span>
+              <span class="font-medium">Ẩn bài viết trên trang {{ locale.label }}</span>
+              <span class="block text-xs opacity-80">
+                Bài sẽ không xuất hiện ở danh sách, tìm kiếm, sitemap và link trực tiếp sẽ trả 404. Nội dung đã nhập vẫn được giữ lại; khi ẩn có thể để trống tiêu đề.
+              </span>
+            </span>
+          </label>
           <div>
             <label class="text-sm font-medium text-slate-700">Tiêu đề</label>
             <input
@@ -314,7 +368,7 @@ onMounted(async () => {
             />
           </div>
 
-          <div class="rounded-xl border border-slate-200 p-4 space-y-3">
+          <div v-if="!isResearch" class="rounded-xl border border-slate-200 p-4 space-y-3">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <h3 class="text-sm font-semibold text-slate-900">CTA cuối bài</h3>
@@ -371,14 +425,14 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div class="rounded-xl border border-slate-200 p-4 space-y-4">
+      <div v-if="!isResearch" class="rounded-xl border border-slate-200 p-4 space-y-4">
         <div>
           <h3 class="text-sm font-semibold text-slate-900">Bài viết liên quan</h3>
           <p class="text-xs text-slate-500">Nếu để trống, trang bài viết sẽ tự động hiển thị 3 bài mới nhất cùng chuyên mục. Bài ở trạng thái draft sẽ không hiển thị ngoài site.</p>
         </div>
         <div v-for="(_, i) in form.related_post_ids" :key="i" class="flex items-center gap-2">
           <select v-model="form.related_post_ids[i]" class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <option v-for="p in otherPosts" :key="p.id" :value="p.id">{{ postTitle(p) }}</option>
+            <option v-for="p in relatedOptions" :key="p.id" :value="p.id">{{ postTitle(p) }}</option>
           </select>
           <button type="button" class="text-xs text-red-600 hover:text-red-800" @click="removeRelatedPost(i)">Xóa</button>
         </div>
@@ -394,7 +448,7 @@ onMounted(async () => {
           {{ saving ? 'Đang lưu...' : 'Lưu' }}
         </button>
         <RouterLink
-          to="/posts"
+          :to="isResearch ? '/posts?type=research' : '/posts'"
           class="rounded-lg border border-slate-300 text-sm font-medium px-5 py-2.5 text-slate-700 hover:bg-slate-50"
         >
           Hủy
@@ -410,7 +464,7 @@ onMounted(async () => {
       :category="preview.category"
       :title="form.translations[activeLocale].title"
       :excerpt="form.translations[activeLocale].excerpt"
-      :featured-image="form.featured_image"
+      :featured-image="isResearch ? '' : form.featured_image"
       :content="form.translations[activeLocale].content"
       :tags="preview.tags"
       :cta="preview.cta"

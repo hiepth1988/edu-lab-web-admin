@@ -40,7 +40,7 @@ function projectTitle(p: { id: number; translations: { locale: string; title: st
 }
 
 async function loadCategories() {
-  const { data } = await categoriesApi.list()
+  const { data } = await categoriesApi.list({ type: 'post' })
   categories.value = data.data
 }
 
